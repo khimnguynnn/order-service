@@ -113,7 +113,7 @@ pipeline {
                 docker pull ${ECR_REPO}:${SERVICE_NAME}-${BRANCH_NAME}-${COMMIT_ID}
                 docker stop ${SERVICE_NAME} || true
                 docker rm ${SERVICE_NAME} || true
-                docker run -d --name ${SERVICE_NAME} -p 5000:5000 ${ECR_REPO}:${SERVICE_NAME}-${BRANCH_NAME}-${COMMIT_ID}
+                docker run -d -e ENVIRONMENT=${BRANCH_NAME} --name ${SERVICE_NAME} -p 5000:5000 ${ECR_REPO}:${SERVICE_NAME}-${BRANCH_NAME}-${COMMIT_ID}
                 sudo nginx -t && sudo nginx -s reload || echo "Nginx reload failed, but deployment completed"
                 echo "✅ Deployed ${SERVICE_NAME} on server ${SERVER_IP}"
               '
