@@ -70,14 +70,22 @@ pipeline {
         always {
           script {
             sh 'docker system prune -f'
+            echo "Cleaned up Docker resources."
           }
         }
         success {
-          echo "✅ Build and push completed for ${SERVICE_NAME} on ${BRANCH_NAME}"
+          script {
+            def BRANCH_NAME = env.BRANCH_NAME
+            echo "✅ Build and push completed for ${SERVICE_NAME} on ${BRANCH_NAME}"
+          }
         }
         failure {
-          echo "❌ Build or push failed for ${SERVICE_NAME} on ${BRANCH_NAME}"
+          script {
+            def BRANCH_NAME = env.BRANCH_NAME
+            echo "❌ Build or push failed for ${SERVICE_NAME} on ${BRANCH_NAME}"
+          }
         }
+      }
     }
   }
 
@@ -86,8 +94,11 @@ pipeline {
       cleanWs()
     }
     failure {
-      echo "❌ Build failed for ${SERVICE_NAME} on ${BRANCH_NAME}"
+      script {
+        def BRANCH_NAME = env.BRANCH_NAME
+        echo "❌ Build failed for ${SERVICE_NAME} on ${BRANCH_NAME}"
+      }
     }
   }
 }
-}
+
