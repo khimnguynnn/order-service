@@ -9,7 +9,6 @@ pipeline {
 
   stages {
     stage('CHECKOUT CODE') {
-      changeRequest()
       steps {
         checkout scm
       }
