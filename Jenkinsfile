@@ -10,7 +10,7 @@ pipeline {
   stages {
     stage('RUN UNIT TESTS') {
       when {
-        changeRequested()
+        changeRequest()
       }
       steps {
         checkout scm
