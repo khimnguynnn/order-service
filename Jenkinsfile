@@ -8,14 +8,23 @@ pipeline {
   }
 
   stages {
-    stage('RUN UNIT TESTS') {
+    stage('CHECKOUT CODE') {
       steps {
         checkout scm
+      }
+    }
+
+    stage('RUN UNIT TESTS') {
+      when {
+        changeRequest()
+      }
+      steps {
         sh '''
         #!/bin/bash
+        export PATH=$PATH:$HOME/.local/bin
         set -e
         echo "Running unit tests for ${SERVICE_NAME}..."
-        pip3 install uv
+        pip3 install --user uv
         uv sync
         uv run pytest ${UNIT_TEST_FILE}
         '''
