@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  order-service-dev:
+    build: .
+    ports:
+      - "5001:5000"
+    env_file:
+      - env.development
+    container_name: order-service-dev
+    restart: unless-stopped
+
+  order-service-staging:
+    build: .
+    ports:
+      - "5002:5000"
+    env_file:
+      - env.staging
+    container_name: order-service-staging
+    restart: unless-stopped
+
+  order-service-prod:
+    build: .
+    ports:
+      - "5000:5000"
+    env_file:
+      - env.production
+    container_name: order-service-prod
+    restart: unless-stopped
