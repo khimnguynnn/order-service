@@ -271,22 +271,3 @@ class TestOrderAPI:
         assert 'error' in data
         assert 'Order not found' in data['error']
 
-    def test_order_total_calculation_fail(self, client, clear_orders):
-        """This test will intentionally fail to test Jenkins pipeline failure handling"""
-        # Create an order with specific values
-        order_data = {
-            "customer_name": "Test User",
-            "product_name": "Test Product",
-            "quantity": 3,
-            "price": 100.0
-        }
-
-        response = client.post('/orders',
-                               data=json.dumps(order_data),
-                               content_type='application/json')
-
-        assert response.status_code == 201
-
-        data = json.loads(response.data)
-        # This assertion will fail because 3 * 100 = 300, not 400
-        assert data['total'] == 400, f"Expected total to be 400, but got {data['total']}"
