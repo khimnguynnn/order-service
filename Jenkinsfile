@@ -108,14 +108,15 @@ pipeline {
             sh """
             #!/bin/bash
             set -e
-            ssh -o StrictHostKeyChecking=no ec2-user@${SERVER_IP} << 'ENDSSH'
+            ssh -o StrictHostKeyChecking=no ec2-user@${SERVER_IP} <<EOF
               aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
               docker pull ${ECR_REPO}:${SERVICE_NAME}-${BRANCH_NAME}-${COMMIT_ID}
               docker stop ${SERVICE_NAME} || true
               docker rm ${SERVICE_NAME} || true
               docker run -d --name ${SERVICE_NAME} -p 5000:5000 ${ECR_REPO}:${SERVICE_NAME}-${BRANCH_NAME}-${COMMIT_ID}
+              sudo nginx -s reload
               echo "✅ Deployed ${SERVICE_NAME} on server ${SERVER_IP}"
-            ENDSSH
+            EOF
             """
           }
         }
