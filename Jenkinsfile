@@ -69,8 +69,8 @@ pipeline {
       post {
         always {
           script {
-            sh 'docker system prune -f'
-            echo "Cleaned up Docker resources."
+            sh 'docker system prune -a -f --volumes'
+            echo "✅ Cleaned up all Docker resources"
           }
         }
         success {
@@ -83,6 +83,38 @@ pipeline {
           script {
             def BRANCH_NAME = env.BRANCH_NAME
             echo "❌ Build or push failed for ${SERVICE_NAME} on ${BRANCH_NAME}"
+          }
+        }
+      }
+    }
+
+    stage('DEPLOY TO AWS EC2') {
+      when {
+        anyOf {
+          branch 'main'
+          branch 'dev'
+        }
+      }
+      steps {
+        script {
+          def BRANCH_NAME = env.BRANCH_NAME
+          def SERVER_IP = (BRANCH_NAME == 'main') ? '52.221.208.1' : '13.212.126.70'
+          def SSH_KEY_ID = 'ssh-private-key'
+
+          echo "🚀 Deploying ${SERVICE_NAME} to ${BRANCH_NAME} server (${SERVER_IP})..."
+
+          sshAgent([SSH_KEY_ID]) {
+            sh """
+            #!/bin/bash
+            set -e
+            ssh -o StrictHostKeyChecking=no ec2-user@${SERVER_IP} << 'ENDSSH'
+              docker pull ${ECR_REPO}:${SERVICE_NAME}-${BRANCH_NAME}-${COMMIT_ID}
+              docker stop ${SERVICE_NAME} || true
+              docker rm ${SERVICE_NAME} || true
+              docker run -d --name ${SERVICE_NAME} -p 5000:5000 ${ECR_REPO}:${SERVICE_NAME}-${BRANCH_NAME}-${COMMIT_ID}
+              echo "✅ Deployed ${SERVICE_NAME} on server ${SERVER_IP}"
+            ENDSSH
+            """
           }
         }
       }
