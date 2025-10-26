@@ -103,7 +103,7 @@ pipeline {
 
           echo "🚀 Deploying ${SERVICE_NAME} to ${BRANCH_NAME} server (${SERVER_IP})..."
 
-          sshAgent([SSH_KEY_ID]) {
+          sshagent([SSH_KEY_ID]) {
             sh """
             #!/bin/bash
             set -e
