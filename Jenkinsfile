@@ -103,7 +103,7 @@ pipeline {
           def COMMIT_ID = env.GIT_COMMIT.substring(0, 7)
 
           echo "🚀 Deploying ${SERVICE_NAME} to ${BRANCH_NAME} server (${SERVER_IP})..."
-
+          sh 'echo ${COMMIT_ID} > /tmp/last_deployed_commit.txt'
           sshagent([SSH_KEY_ID]) {
             sh """
             #!/bin/bash
