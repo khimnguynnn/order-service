@@ -101,14 +101,15 @@ pipeline {
           def SERVER_IP = (BRANCH_NAME == 'main') ? '52.221.208.1' : '13.212.126.70'
           def SSH_KEY_ID = 'ssh-private-key'
           def COMMIT_ID = env.GIT_COMMIT.substring(0, 7)
-          
-          echo "🚀 Deploying ${SERVICE_NAME} to ${BRANCH_NAME} server (${SERVER_IP})..."
 
+          echo "🚀 Deploying ${SERVICE_NAME} to ${BRANCH_NAME} server (${SERVER_IP})..."
+          sh 'echo ${COMMIT_ID} > /tmp/last_deployed_commit.txt'
           sshagent([SSH_KEY_ID]) {
             sh """
             #!/bin/bash
             set -e
             ssh -o StrictHostKeyChecking=no ec2-user@${SERVER_IP} << 'ENDSSH'
+              aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
               docker pull ${ECR_REPO}:${SERVICE_NAME}-${BRANCH_NAME}-${COMMIT_ID}
               docker stop ${SERVICE_NAME} || true
               docker rm ${SERVICE_NAME} || true
