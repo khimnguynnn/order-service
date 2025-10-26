@@ -8,12 +8,17 @@ pipeline {
   }
 
   stages {
+    stage('CHECKOUT CODE') {
+      steps {
+        checkout scm
+      }
+    }
+
     stage('RUN UNIT TESTS') {
       when {
         changeRequest()
       }
       steps {
-        checkout scm
         sh '''
         #!/bin/bash
         set -e
