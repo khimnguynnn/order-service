@@ -9,6 +9,9 @@ pipeline {
 
   stages {
     stage('RUN UNIT TESTS') {
+      when {
+        changeRequested()
+      }
       steps {
         checkout scm
         sh '''
