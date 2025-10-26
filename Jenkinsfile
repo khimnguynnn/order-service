@@ -23,7 +23,7 @@ pipeline {
         #!/bin/bash
         set -e
         echo "Running unit tests for ${SERVICE_NAME}..."
-        pip install uv
+        pip3 install uv
         uv sync
         uv run pytest ${UNIT_TEST_FILE}
         '''
