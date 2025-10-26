@@ -100,7 +100,8 @@ pipeline {
           def BRANCH_NAME = env.BRANCH_NAME
           def SERVER_IP = (BRANCH_NAME == 'main') ? '52.221.208.1' : '13.212.126.70'
           def SSH_KEY_ID = 'ssh-private-key'
-
+          def COMMIT_ID = env.GIT_COMMIT.substring(0, 7)
+          
           echo "🚀 Deploying ${SERVICE_NAME} to ${BRANCH_NAME} server (${SERVER_IP})..."
 
           sshagent([SSH_KEY_ID]) {
