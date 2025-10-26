@@ -42,7 +42,8 @@ pipeline {
       }
       steps {
         script {
-          def imageTag = "${ECR_REPO}/${SERVICE_NAME}:${BUILD_ID}"
+          def BRANCH_NAME = env.BRANCH_NAME
+          def imageTag = "${ECR_REPO}:${SERVICE_NAME}-${BRANCH_NAME}-${BUILD_ID}"
           sh """
           #!/bin/bash
           set -e
