@@ -31,6 +31,14 @@ pipeline {
         uv run pytest ${UNIT_TEST_FILE}
         '''
       }
+      post {
+        success {
+          echo "✅ Unit tests passed for ${SERVICE_NAME}"
+        }
+        failure {
+          echo "❌ Unit tests failed for ${SERVICE_NAME}"
+        }
+      }
     }
 
     stage('BUILD AND PUSH DOCKER IMAGE') {
@@ -43,7 +51,8 @@ pipeline {
       steps {
         script {
           def BRANCH_NAME = env.BRANCH_NAME
-          def imageTag = "${ECR_REPO}:${SERVICE_NAME}-${BRANCH_NAME}-${BUILD_ID}"
+          def COMMIT_ID = env.GIT_COMMIT.substring(0, 7)
+          def imageTag = "${ECR_REPO}:${SERVICE_NAME}-${BRANCH_NAME}-${COMMIT_ID}"
           sh """
           #!/bin/bash
           set -e
@@ -57,6 +66,26 @@ pipeline {
           """
         }
       }
+      post {
+        always {
+          script {
+            sh 'docker system prune -f'
+            echo "Cleaned up Docker resources."
+          }
+        }
+        success {
+          script {
+            def BRANCH_NAME = env.BRANCH_NAME
+            echo "✅ Build and push completed for ${SERVICE_NAME} on ${BRANCH_NAME}"
+          }
+        }
+        failure {
+          script {
+            def BRANCH_NAME = env.BRANCH_NAME
+            echo "❌ Build or push failed for ${SERVICE_NAME} on ${BRANCH_NAME}"
+          }
+        }
+      }
     }
   }
 
@@ -65,7 +94,11 @@ pipeline {
       cleanWs()
     }
     failure {
-      echo "❌ Build failed for ${SERVICE_NAME} on ${BRANCH_NAME}"
+      script {
+        def BRANCH_NAME = env.BRANCH_NAME
+        echo "❌ Build failed for ${SERVICE_NAME} on ${BRANCH_NAME}"
+      }
     }
   }
 }
+
