@@ -123,7 +123,7 @@ pipeline {
       steps {
         script {
           def BRANCH_NAME = env.BRANCH_NAME
-          def SERVER_IP = (BRANCH_NAME == 'main') ? '52.221.208.1' : '13.212.126.70'
+          def SERVER_IP = (BRANCH_NAME == 'main') ? '52.221.180.12' : '13.212.118.127'
           def SSH_KEY_ID = 'ssh-private-key'
           def COMMIT_ID = env.GIT_COMMIT.substring(0, 7)
 
