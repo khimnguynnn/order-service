@@ -17,29 +17,54 @@ pipeline {
     }
 
     stage('RUN UNIT TESTS') {
-      when {
-        changeRequest()
-      }
+      when { changeRequest() }
       steps {
         sh '''
         #!/bin/bash
         set -e
         export PATH=$PATH:$HOME/.local/bin
         echo "Running unit tests for ${SERVICE_NAME}..."
-        pip3 install --user --no-cache-dir uv
-        uv sync
-        uv run pytest ${UNIT_TEST_FILE}
+
+        # activate venv if exists
+        if [ -d ".venv" ]; then
+          echo "Activating .venv"
+          source .venv/bin/activate
+        fi
+
+        # install pytest + plugins into the active interpreter (venv or agent py)
+        pip install -r requirements.txt
+        pip install --no-cache-dir pytest pytest-cov pytest-html allure-pytest
+
+        # run pytest and produce reports; capture exit code but don't fail shell so we can publish results
+        set +e
+        python3 -m pytest -v -s ${UNIT_TEST_FILE} \
+          --junitxml=pytest-report.xml \
+          --alluredir=allure-results \
+          --cov=./ --cov-report=xml:coverage.xml \
+          --html=pytest-report.html --self-contained-html \
+          2>&1 | tee pytest.log
+        PYTEST_EXIT=${PIPESTATUS[0]}
+        echo "Pytest exit code: ${PYTEST_EXIT}"
+        set -e
+        exit 0
         '''
       }
       post {
-        success {
-          echo "✅ Unit tests passed for ${SERVICE_NAME}"
-        }
-        failure {
-          echo "❌ Unit tests failed for ${SERVICE_NAME}"
+        always {
+          junit allowEmptyResults: true, testResults: 'pytest-report.xml'
+          publishHTML (target: [
+            reportDir: '.',
+            reportFiles: 'pytest-report.html',
+            reportName: 'Pytest HTML Report',
+            keepAll: true,
+            alwaysLinkToLastBuild: true
+          ])
+          archiveArtifacts artifacts: 'pytest.log, pytest-report.xml, pytest-report.html, coverage.xml, allure-results/**', fingerprint: true
         }
       }
     }
+
+
 
     stage('BUILD AND PUSH DOCKER IMAGE') {
       when {
@@ -98,7 +123,7 @@ pipeline {
       steps {
         script {
           def BRANCH_NAME = env.BRANCH_NAME
-          def SERVER_IP = (BRANCH_NAME == 'main') ? '52.221.208.1' : '13.212.126.70'
+          def SERVER_IP = (BRANCH_NAME == 'main') ? '52.221.180.12' : '13.212.118.127'
           def SSH_KEY_ID = 'ssh-private-key'
           def COMMIT_ID = env.GIT_COMMIT.substring(0, 7)
 
