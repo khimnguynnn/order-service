@@ -25,22 +25,18 @@ pipeline {
         export PATH=$PATH:$HOME/.local/bin
         echo "Running unit tests for ${SERVICE_NAME}..."
 
-        # Install wrapper + pytest + reporters into ~/.local so no sudo.
-        # If install fails, we want to stop early (set -e above).
-        pip3 install --user --no-cache-dir uv pytest pytest-cov pytest-html allure-pytest
+        # activate venv if exists
+        if [ -d ".venv" ]; then
+          echo "Activating .venv"
+          source .venv/bin/activate
+        fi
 
-        # sync with uv if you're using it (keeps your workflow)
-        pip3 show uv >/dev/null 2>&1 && uv sync || true
+        # install pytest + plugins into the active interpreter (venv or agent py)
+        pip install --no-cache-dir pytest pytest-cov pytest-html allure-pytest
 
-        # Run tests but don't let the shell exit the whole step on failure:
-        # - produce junit xml, html report, allure-results, coverage xml
-        # - tee to both console and a log file
-        # - capture pytest exit code (so we can publish reports even if tests fail)
+        # run pytest and produce reports; capture exit code but don't fail shell so we can publish results
         set +e
-        uv --version >/dev/null 2>&1 && RUN_CMD='uv run pytest' || RUN_CMD='pytest'
-        echo "Using test command: $RUN_CMD"
-        # run pytest with reporters
-        $RUN_CMD -v -s ${UNIT_TEST_FILE} \
+        python -m pytest -v -s ${UNIT_TEST_FILE} \
           --junitxml=pytest-report.xml \
           --alluredir=allure-results \
           --cov=./ --cov-report=xml:coverage.xml \
@@ -48,44 +44,25 @@ pipeline {
           2>&1 | tee pytest.log
         PYTEST_EXIT=${PIPESTATUS[0]}
         echo "Pytest exit code: ${PYTEST_EXIT}"
-        # keep step successful so post { always } can run junit/publish steps;
-        # junit step will mark the build failed/unstable based on XML contents.
         set -e
         exit 0
         '''
       }
       post {
-        success {
-          echo "✅ Unit tests step completed for ${SERVICE_NAME} (check Test Results)."
-        }
-        failure {
-          echo "⚠️ Unit tests step failed to run (installation or unexpected error)."
-        }
         always {
-          // publish junit results -> Jenkins Test Results page + trend + failures list
           junit allowEmptyResults: true, testResults: 'pytest-report.xml'
-
-          // publish pytest-html report (requires HTML Publisher plugin)
           publishHTML (target: [
-            reportDir: '.', 
-            reportFiles: 'pytest-report.html', 
-            reportName: 'Pytest HTML Report', 
-            keepAll: true, 
+            reportDir: '.',
+            reportFiles: 'pytest-report.html',
+            reportName: 'Pytest HTML Report',
+            keepAll: true,
             alwaysLinkToLastBuild: true
           ])
-
-          // archive raw artifacts and allure results for Allure plugin
           archiveArtifacts artifacts: 'pytest.log, pytest-report.xml, pytest-report.html, coverage.xml, allure-results/**', fingerprint: true
-
-          // optional: if you have Allure Jenkins plugin installed, the separate 'Allure' publisher step
-          // can be added in a follow-up stage to render interactive Allure report:
-          // allure([
-          //   results: [[path: 'allure-results']],
-          //   reportBuildPolicy: 'ALWAYS'
-          // ])
         }
       }
     }
+
 
 
     stage('BUILD AND PUSH DOCKER IMAGE') {
