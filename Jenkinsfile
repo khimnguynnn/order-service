@@ -49,6 +49,7 @@ pipeline {
         exit 0
         '''
       }
+
       post {
         always {
           junit allowEmptyResults: true, testResults: 'pytest-report.xml'
