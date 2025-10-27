@@ -36,7 +36,7 @@ pipeline {
 
         # run pytest and produce reports; capture exit code but don't fail shell so we can publish results
         set +e
-        python -m pytest -v -s ${UNIT_TEST_FILE} \
+        python3 -m pytest -v -s ${UNIT_TEST_FILE} \
           --junitxml=pytest-report.xml \
           --alluredir=allure-results \
           --cov=./ --cov-report=xml:coverage.xml \
