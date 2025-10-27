@@ -32,6 +32,7 @@ pipeline {
         fi
 
         # install pytest + plugins into the active interpreter (venv or agent py)
+        pip install -r requirements.txt
         pip install --no-cache-dir pytest pytest-cov pytest-html allure-pytest
 
         # run pytest and produce reports; capture exit code but don't fail shell so we can publish results
